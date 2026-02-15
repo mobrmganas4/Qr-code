@@ -5,7 +5,6 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>QR Pro | صانع وماسح الأكواد الذكي</title>
 
-    <!-- Logo Icon -->
     <link rel="icon" type="image/png" href="logo.png">
 
     <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
@@ -14,8 +13,10 @@
     <style>
         :root {
             --accent: #00d2ff;
+            --success: #2ecc71;
             --bg: #0f172a;
             --card: #1e293b;
+            --text-muted: #94a3b8;
         }
 
         body {
@@ -50,10 +51,10 @@
 
         .tab-btn {
             flex: 1;
-            padding: 10px;
+            padding: 12px;
             border: none;
             background: none;
-            color: #94a3b8;
+            color: var(--text-muted);
             cursor: pointer;
             border-radius: 8px;
             font-weight: bold;
@@ -78,7 +79,10 @@
             box-sizing: border-box;
             margin-bottom: 20px;
             font-size: 16px;
+            outline: none;
         }
+
+        input:focus { border-color: var(--accent); }
 
         #qrcode {
             background: white;
@@ -100,14 +104,27 @@
             cursor: pointer;
             font-size: 16px;
             transition: 0.3s;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 10px;
         }
 
         .action-btn:hover { opacity: 0.9; transform: translateY(-2px); }
 
         #download-btn {
             margin-top: 10px;
-            background: #2ecc71;
+            background: var(--success);
             display: none;
+        }
+
+        /* تنسيق منطقة المسح الجديد */
+        #camera-prompt {
+            text-align: center;
+            padding: 40px 20px;
+            border: 2px dashed #334155;
+            border-radius: 16px;
+            margin-bottom: 20px;
         }
 
         #reader {
@@ -115,14 +132,25 @@
             border-radius: 12px;
             overflow: hidden;
             border: 2px solid var(--accent) !important;
+            display: none;
+        }
+
+        #scan-result-card {
+            background: #0f172a;
+            padding: 20px;
+            border-radius: 12px;
+            margin-top: 20px;
+            text-align: center;
+            display: none;
         }
 
         #result-link {
             word-break: break-all;
             color: var(--accent);
-            margin-top: 15px;
+            text-decoration: none;
             display: block;
-            text-align: center;
+            margin: 10px 0;
+            font-weight: bold;
         }
     </style>
 </head>
@@ -138,22 +166,30 @@
 
     <div id="gen-section" class="content-section active">
         <input type="text" id="qr-input" placeholder="ضع الرابط أو النص هنا...">
-        <button class="action-btn" onclick="generateQR()">إنشاء كود QR</button>
+        <button class="action-btn" onclick="generateQR()">إنشاء كود QR ✨</button>
         
         <div id="qrcode"></div>
         <button id="download-btn" class="action-btn" onclick="downloadQR()">تحميل الصورة ⬇️</button>
     </div>
 
     <div id="scan-section" class="content-section">
+        <div id="camera-prompt">
+            <p style="color: var(--text-muted); margin-bottom: 20px;">نحتاج للوصول إلى الكاميرا لمسح الكود</p>
+            <button class="action-btn" onclick="initScanner()">فتح الكاميرا 📷</button>
+        </div>
+
         <div id="reader"></div>
-        <div id="scan-result">
-            <p style="text-align:center">النتيجة ستظهر هنا:</p>
+
+        <div id="scan-result-card">
+            <p style="margin:0; font-size: 0.9rem; color: var(--text-muted);">تم العثور على:</p>
             <a id="result-link" href="#" target="_blank"></a>
+            <button class="action-btn" style="background: #475569; color: white; margin-top: 15px;" onclick="resetScanner()">مسح كود آخر 🔄</button>
         </div>
     </div>
 </div>
 
 <script>
+    // نظام التبديل بين التابات
     function switchTab(type) {
         document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
         document.querySelectorAll('.content-section').forEach(s => s.classList.remove('active'));
@@ -161,13 +197,14 @@
         if(type === 'gen') {
             document.querySelector('.tab-btn:nth-child(1)').classList.add('active');
             document.getElementById('gen-section').classList.add('active');
+            stopScanner(); // إيقاف الكاميرا فوراً عند الخروج من التاب
         } else {
             document.querySelector('.tab-btn:nth-child(2)').classList.add('active');
             document.getElementById('scan-section').classList.add('active');
-            startScanner();
         }
     }
 
+    // --- منطق صناعة الـ QR ---
     let qrcodeElement = new QRCode(document.getElementById("qrcode"), {
         width: 200,
         height: 200
@@ -175,12 +212,12 @@
 
     function generateQR() {
         let text = document.getElementById('qr-input').value;
-        if(text) {
+        if(text.trim()) {
             qrcodeElement.makeCode(text);
             document.getElementById('qrcode').style.display = 'block';
-            document.getElementById('download-btn').style.display = 'block';
+            document.getElementById('download-btn').style.display = 'flex';
         } else {
-            alert("اكتب حاجة الأول!");
+            alert("من فضلك أدخل نصاً أو رابطاً أولاً!");
         }
     }
 
@@ -189,23 +226,64 @@
         if(img) {
             let link = document.createElement('a');
             link.href = img.src;
-            link.download = 'my_qr_code.png';
+            link.download = 'QR_Pro_Code.png';
             link.click();
         }
     }
 
+    // --- منطق ماسح الـ QR ---
     let html5QrCode;
+
+    function initScanner() {
+        document.getElementById('camera-prompt').style.display = 'none';
+        document.getElementById('reader').style.display = 'block';
+        
+        if (!html5QrCode) {
+            html5QrCode = new Html5Qrcode("reader");
+        }
+        
+        startScanner();
+    }
+
     function startScanner() {
-        html5QrCode = new Html5Qrcode("reader");
+        const config = { fps: 10, qrbox: { width: 250, height: 250 } };
+
         html5QrCode.start(
             { facingMode: "environment" }, 
-            { fps: 10, qrbox: { width: 250, height: 250 } },
+            config,
             (decodedText) => {
-                document.getElementById('result-link').innerText = decodedText;
-                document.getElementById('result-link').href = decodedText;
-                html5QrCode.stop();
+                // عند النجاح في القراءة
+                showResult(decodedText);
             }
-        ).catch(err => console.log("الكاميرا مش شغالة أو محتاجة إذن"));
+        ).catch(err => {
+            console.error(err);
+            alert("خطأ: تأكد من إعطاء إذن الكاميرا للمتصفح.");
+            resetScanner();
+        });
+    }
+
+    function showResult(text) {
+        stopScanner();
+        document.getElementById('reader').style.display = 'none';
+        document.getElementById('scan-result-card').style.display = 'block';
+        
+        let linkElement = document.getElementById('result-link');
+        linkElement.innerText = text;
+        // التحقق إذا كان النص رابطاً لجعله قابلاً للضغط
+        linkElement.href = text.startsWith('http') ? text : '#';
+    }
+
+    function stopScanner() {
+        if (html5QrCode && html5QrCode.isScanning) {
+            html5QrCode.stop().catch(err => console.log("Stop error", err));
+        }
+    }
+
+    function resetScanner() {
+        stopScanner();
+        document.getElementById('scan-result-card').style.display = 'none';
+        document.getElementById('reader').style.display = 'none';
+        document.getElementById('camera-prompt').style.display = 'block';
     }
 </script>
 
