@@ -118,7 +118,6 @@
             display: none;
         }
 
-        /* تنسيق منطقة المسح الجديد */
         #camera-prompt {
             text-align: center;
             padding: 40px 20px;
@@ -147,10 +146,11 @@
         #result-link {
             word-break: break-all;
             color: var(--accent);
-            text-decoration: none;
+            text-decoration: underline;
             display: block;
-            margin: 10px 0;
+            margin: 15px 0;
             font-weight: bold;
+            font-size: 1.1rem;
         }
     </style>
 </head>
@@ -174,22 +174,22 @@
 
     <div id="scan-section" class="content-section">
         <div id="camera-prompt">
-            <p style="color: var(--text-muted); margin-bottom: 20px;">نحتاج للوصول إلى الكاميرا لمسح الكود</p>
+            <p style="color: var(--text-muted); margin-bottom: 20px;">اضغط لبدء استخدام الكاميرا</p>
             <button class="action-btn" onclick="initScanner()">فتح الكاميرا 📷</button>
         </div>
 
         <div id="reader"></div>
 
         <div id="scan-result-card">
-            <p style="margin:0; font-size: 0.9rem; color: var(--text-muted);">تم العثور على:</p>
-            <a id="result-link" href="#" target="_blank"></a>
-            <button class="action-btn" style="background: #475569; color: white; margin-top: 15px;" onclick="resetScanner()">مسح كود آخر 🔄</button>
+            <p style="margin:0; font-size: 0.9rem; color: var(--text-muted);">الرابط المكتشف (سيفتح في نافذة جديدة):</p>
+            <a id="result-link" href="#" target="_blank" rel="noopener noreferrer"></a>
+            <p style="font-size: 0.8rem; color: #64748b; margin-bottom: 15px;">انقر على الرابط أعلاه للانتقال</p>
+            <button class="action-btn" style="background: #475569; color: white;" onclick="resetScanner()">مسح كود آخر 🔄</button>
         </div>
     </div>
 </div>
 
 <script>
-    // نظام التبديل بين التابات
     function switchTab(type) {
         document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
         document.querySelectorAll('.content-section').forEach(s => s.classList.remove('active'));
@@ -197,14 +197,14 @@
         if(type === 'gen') {
             document.querySelector('.tab-btn:nth-child(1)').classList.add('active');
             document.getElementById('gen-section').classList.add('active');
-            stopScanner(); // إيقاف الكاميرا فوراً عند الخروج من التاب
+            stopScanner(); 
         } else {
             document.querySelector('.tab-btn:nth-child(2)').classList.add('active');
             document.getElementById('scan-section').classList.add('active');
         }
     }
 
-    // --- منطق صناعة الـ QR ---
+    // --- توليد QR ---
     let qrcodeElement = new QRCode(document.getElementById("qrcode"), {
         width: 200,
         height: 200
@@ -217,7 +217,7 @@
             document.getElementById('qrcode').style.display = 'block';
             document.getElementById('download-btn').style.display = 'flex';
         } else {
-            alert("من فضلك أدخل نصاً أو رابطاً أولاً!");
+            alert("اكتب نصاً أولاً!");
         }
     }
 
@@ -226,38 +226,28 @@
         if(img) {
             let link = document.createElement('a');
             link.href = img.src;
-            link.download = 'QR_Pro_Code.png';
+            link.download = 'QR_Code.png';
             link.click();
         }
     }
 
-    // --- منطق ماسح الـ QR ---
+    // --- مسح QR ---
     let html5QrCode;
 
     function initScanner() {
         document.getElementById('camera-prompt').style.display = 'none';
         document.getElementById('reader').style.display = 'block';
-        
-        if (!html5QrCode) {
-            html5QrCode = new Html5Qrcode("reader");
-        }
-        
+        if (!html5QrCode) { html5QrCode = new Html5Qrcode("reader"); }
         startScanner();
     }
 
     function startScanner() {
-        const config = { fps: 10, qrbox: { width: 250, height: 250 } };
-
         html5QrCode.start(
             { facingMode: "environment" }, 
-            config,
-            (decodedText) => {
-                // عند النجاح في القراءة
-                showResult(decodedText);
-            }
+            { fps: 10, qrbox: { width: 250, height: 250 } },
+            (decodedText) => { showResult(decodedText); }
         ).catch(err => {
-            console.error(err);
-            alert("خطأ: تأكد من إعطاء إذن الكاميرا للمتصفح.");
+            alert("يرجى السماح بالوصول للكاميرا.");
             resetScanner();
         });
     }
@@ -269,13 +259,15 @@
         
         let linkElement = document.getElementById('result-link');
         linkElement.innerText = text;
-        // التحقق إذا كان النص رابطاً لجعله قابلاً للضغط
-        linkElement.href = text.startsWith('http') ? text : '#';
+        
+        // إذا كان النص لا يبدأ بـ http، نقوم بإضافتها ليفتح كـ رابط صحيح
+        let webLink = text.startsWith('http') ? text : 'https://' + text;
+        linkElement.href = webLink;
     }
 
     function stopScanner() {
         if (html5QrCode && html5QrCode.isScanning) {
-            html5QrCode.stop().catch(err => console.log("Stop error", err));
+            html5QrCode.stop();
         }
     }
 
