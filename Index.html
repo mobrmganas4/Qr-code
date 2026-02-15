@@ -1,0 +1,213 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>QR Pro | صانع وماسح الأكواد الذكي</title>
+
+    <!-- Logo Icon -->
+    <link rel="icon" type="image/png" href="logo.png">
+
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
+    <script src="https://unpkg.com/html5-qrcode"></script>
+    
+    <style>
+        :root {
+            --accent: #00d2ff;
+            --bg: #0f172a;
+            --card: #1e293b;
+        }
+
+        body {
+            background: var(--bg);
+            color: white;
+            font-family: 'Segoe UI', Tahoma, sans-serif;
+            margin: 0;
+            display: flex;
+            justify-content: center;
+            padding: 20px;
+        }
+
+        .container {
+            width: 100%;
+            max-width: 500px;
+            background: var(--card);
+            border-radius: 24px;
+            padding: 30px;
+            box-shadow: 0 20px 50px rgba(0,0,0,0.5);
+            border: 1px solid rgba(255,255,255,0.1);
+        }
+
+        h1 { text-align: center; color: var(--accent); font-size: 1.8rem; margin-bottom: 30px; }
+
+        .tabs {
+            display: flex;
+            background: #0f172a;
+            padding: 5px;
+            border-radius: 12px;
+            margin-bottom: 25px;
+        }
+
+        .tab-btn {
+            flex: 1;
+            padding: 10px;
+            border: none;
+            background: none;
+            color: #94a3b8;
+            cursor: pointer;
+            border-radius: 8px;
+            font-weight: bold;
+            transition: 0.3s;
+        }
+
+        .tab-btn.active {
+            background: var(--accent);
+            color: var(--bg);
+        }
+
+        .content-section { display: none; }
+        .content-section.active { display: block; }
+
+        input {
+            width: 100%;
+            padding: 15px;
+            border-radius: 12px;
+            border: 2px solid #334155;
+            background: #0f172a;
+            color: white;
+            box-sizing: border-box;
+            margin-bottom: 20px;
+            font-size: 16px;
+        }
+
+        #qrcode {
+            background: white;
+            padding: 15px;
+            border-radius: 12px;
+            width: fit-content;
+            margin: 20px auto;
+            display: none;
+        }
+
+        .action-btn {
+            width: 100%;
+            padding: 15px;
+            border-radius: 12px;
+            border: none;
+            background: var(--accent);
+            color: var(--bg);
+            font-weight: bold;
+            cursor: pointer;
+            font-size: 16px;
+            transition: 0.3s;
+        }
+
+        .action-btn:hover { opacity: 0.9; transform: translateY(-2px); }
+
+        #download-btn {
+            margin-top: 10px;
+            background: #2ecc71;
+            display: none;
+        }
+
+        #reader {
+            width: 100%;
+            border-radius: 12px;
+            overflow: hidden;
+            border: 2px solid var(--accent) !important;
+        }
+
+        #result-link {
+            word-break: break-all;
+            color: var(--accent);
+            margin-top: 15px;
+            display: block;
+            text-align: center;
+        }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <h1>QR PRO 🚀</h1>
+
+    <div class="tabs">
+        <button class="tab-btn active" onclick="switchTab('gen')">صناعة QR</button>
+        <button class="tab-btn" onclick="switchTab('scan')">مسح QR</button>
+    </div>
+
+    <div id="gen-section" class="content-section active">
+        <input type="text" id="qr-input" placeholder="ضع الرابط أو النص هنا...">
+        <button class="action-btn" onclick="generateQR()">إنشاء كود QR</button>
+        
+        <div id="qrcode"></div>
+        <button id="download-btn" class="action-btn" onclick="downloadQR()">تحميل الصورة ⬇️</button>
+    </div>
+
+    <div id="scan-section" class="content-section">
+        <div id="reader"></div>
+        <div id="scan-result">
+            <p style="text-align:center">النتيجة ستظهر هنا:</p>
+            <a id="result-link" href="#" target="_blank"></a>
+        </div>
+    </div>
+</div>
+
+<script>
+    function switchTab(type) {
+        document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+        document.querySelectorAll('.content-section').forEach(s => s.classList.remove('active'));
+        
+        if(type === 'gen') {
+            document.querySelector('.tab-btn:nth-child(1)').classList.add('active');
+            document.getElementById('gen-section').classList.add('active');
+        } else {
+            document.querySelector('.tab-btn:nth-child(2)').classList.add('active');
+            document.getElementById('scan-section').classList.add('active');
+            startScanner();
+        }
+    }
+
+    let qrcodeElement = new QRCode(document.getElementById("qrcode"), {
+        width: 200,
+        height: 200
+    });
+
+    function generateQR() {
+        let text = document.getElementById('qr-input').value;
+        if(text) {
+            qrcodeElement.makeCode(text);
+            document.getElementById('qrcode').style.display = 'block';
+            document.getElementById('download-btn').style.display = 'block';
+        } else {
+            alert("اكتب حاجة الأول!");
+        }
+    }
+
+    function downloadQR() {
+        let img = document.querySelector('#qrcode img');
+        if(img) {
+            let link = document.createElement('a');
+            link.href = img.src;
+            link.download = 'my_qr_code.png';
+            link.click();
+        }
+    }
+
+    let html5QrCode;
+    function startScanner() {
+        html5QrCode = new Html5Qrcode("reader");
+        html5QrCode.start(
+            { facingMode: "environment" }, 
+            { fps: 10, qrbox: { width: 250, height: 250 } },
+            (decodedText) => {
+                document.getElementById('result-link').innerText = decodedText;
+                document.getElementById('result-link').href = decodedText;
+                html5QrCode.stop();
+            }
+        ).catch(err => console.log("الكاميرا مش شغالة أو محتاجة إذن"));
+    }
+</script>
+
+</body>
+</html>
