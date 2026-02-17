@@ -3,13 +3,13 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>QR Pro | صانع وماسح الأكواد الذكي</title>
+    <title>QR Pro App</title>
 
     <link rel="icon" type="image/png" href="logo.png">
-
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
-    <script src="https://unpkg.com/html5-qrcode"></script>
     
+    <script src="https://cdn.jsdelivr.net/npm/qrcode@1.5.1/build/qrcode.min.js"></script>
+    <script src="https://unpkg.com/html5-qrcode"></script>
+
     <style>
         :root {
             --accent: #00d2ff;
@@ -17,6 +17,7 @@
             --bg: #0f172a;
             --card: #1e293b;
             --text-muted: #94a3b8;
+            --nav-bg: #1e293b;
         }
 
         body {
@@ -24,258 +25,252 @@
             color: white;
             font-family: 'Segoe UI', Tahoma, sans-serif;
             margin: 0;
+            padding: 0;
             display: flex;
-            justify-content: center;
-            padding: 20px;
+            flex-direction: column;
+            align-items: center;
+            min-height: 100vh;
         }
 
-        .container {
+        /* حاوية المحتوى الرئيسية */
+        .app-content {
             width: 100%;
             max-width: 500px;
-            background: var(--card);
-            border-radius: 24px;
-            padding: 30px;
-            box-shadow: 0 20px 50px rgba(0,0,0,0.5);
-            border: 1px solid rgba(255,255,255,0.1);
-        }
-
-        h1 { text-align: center; color: var(--accent); font-size: 1.8rem; margin-bottom: 30px; }
-
-        .tabs {
-            display: flex;
-            background: #0f172a;
-            padding: 5px;
-            border-radius: 12px;
-            margin-bottom: 25px;
-        }
-
-        .tab-btn {
-            flex: 1;
-            padding: 12px;
-            border: none;
-            background: none;
-            color: var(--text-muted);
-            cursor: pointer;
-            border-radius: 8px;
-            font-weight: bold;
-            transition: 0.3s;
-        }
-
-        .tab-btn.active {
-            background: var(--accent);
-            color: var(--bg);
-        }
-
-        .content-section { display: none; }
-        .content-section.active { display: block; }
-
-        input {
-            width: 100%;
-            padding: 15px;
-            border-radius: 12px;
-            border: 2px solid #334155;
-            background: #0f172a;
-            color: white;
+            padding: 20px;
+            padding-bottom: 100px; /* مسافة عشان الشريط السفلي */
             box-sizing: border-box;
-            margin-bottom: 20px;
-            font-size: 16px;
-            outline: none;
         }
 
-        input:focus { border-color: var(--accent); }
+        .header-area { text-align: center; margin-bottom: 25px; margin-top: 10px; }
+        .header-area img { width: 50px; height: 50px; border-radius: 10px; }
+        h1 { color: var(--accent); font-size: 1.5rem; margin: 10px 0; }
 
-        #qrcode {
-            background: white;
-            padding: 15px;
-            border-radius: 12px;
-            width: fit-content;
-            margin: 20px auto;
-            display: none;
+        /* شريط التنقل السفلي */
+        .bottom-nav {
+            position: fixed;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            background: var(--nav-bg);
+            display: flex;
+            justify-content: space-around;
+            padding: 12px 0;
+            border-top: 1px solid rgba(255,255,255,0.1);
+            box-shadow: 0 -5px 20px rgba(0,0,0,0.3);
+            z-index: 1000;
+        }
+
+        .nav-item {
+            color: var(--text-muted);
+            text-decoration: none;
+            font-size: 0.75rem;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            cursor: pointer;
+            transition: 0.3s;
+            flex: 1;
+        }
+
+        .nav-item.active { color: var(--accent); }
+        .nav-item svg { width: 24px; height: 24px; margin-bottom: 4px; fill: currentColor; }
+
+        /* الأقسام */
+        .page-section { display: none; width: 100%; }
+        .page-section.active { display: block; animation: fadeIn 0.4s ease; }
+
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+
+        /* ستايل الكروت والمدخلات */
+        .card {
+            background: var(--card);
+            border-radius: 20px;
+            padding: 20px;
+            border: 1px solid rgba(255,255,255,0.05);
+            margin-bottom: 20px;
+        }
+
+        .control-group { margin-bottom: 15px; }
+        label { display: block; margin-bottom: 8px; font-size: 0.85rem; color: var(--text-muted); }
+        input {
+            width: 100%; padding: 12px; border-radius: 12px; border: 2px solid #334155;
+            background: #0f172a; color: white; box-sizing: border-box; outline: none;
         }
 
         .action-btn {
-            width: 100%;
-            padding: 15px;
-            border-radius: 12px;
-            border: none;
-            background: var(--accent);
-            color: var(--bg);
-            font-weight: bold;
-            cursor: pointer;
-            font-size: 16px;
-            transition: 0.3s;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            gap: 10px;
+            width: 100%; padding: 15px; border-radius: 12px; border: none;
+            background: var(--accent); color: var(--bg); font-weight: bold;
+            cursor: pointer; font-size: 1rem; transition: 0.3s;
         }
 
-        .action-btn:hover { opacity: 0.9; transform: translateY(-2px); }
+        #result-area { text-align: center; margin-top: 20px; display: none; }
+        canvas { max-width: 100%; border-radius: 15px; background: white; padding: 10px; }
 
-        #download-btn {
-            margin-top: 10px;
-            background: var(--success);
-            display: none;
-        }
-
-        #camera-prompt {
-            text-align: center;
-            padding: 40px 20px;
-            border: 2px dashed #334155;
-            border-radius: 16px;
-            margin-bottom: 20px;
-        }
-
-        #reader {
-            width: 100%;
-            border-radius: 12px;
-            overflow: hidden;
-            border: 2px solid var(--accent) !important;
-            display: none;
-        }
-
-        #scan-result-card {
-            background: #0f172a;
-            padding: 20px;
-            border-radius: 12px;
-            margin-top: 20px;
-            text-align: center;
-            display: none;
-        }
-
-        #result-link {
-            word-break: break-all;
-            color: var(--accent);
-            text-decoration: underline;
-            display: block;
-            margin: 15px 0;
-            font-weight: bold;
-            font-size: 1.1rem;
+        /* قسم About & Contact */
+        .info-text { line-height: 1.6; color: var(--text-muted); text-align: center; }
+        .contact-link {
+            display: inline-block; background: #24A1DE; color: white;
+            padding: 12px 25px; border-radius: 30px; text-decoration: none;
+            font-weight: bold; margin-top: 15px;
         }
     </style>
 </head>
 <body>
 
-<div class="container">
-    <h1>QR PRO 🚀</h1>
-
-    <div class="tabs">
-        <button class="tab-btn active" onclick="switchTab('gen')">صناعة QR</button>
-        <button class="tab-btn" onclick="switchTab('scan')">مسح QR</button>
+<div class="app-content">
+    <div class="header-area">
+        <img src="logo.png" alt="Logo" onerror="this.style.display='none'">
+        <h1 id="page-title">ماسح QR</h1>
     </div>
 
-    <div id="gen-section" class="content-section active">
-        <input type="text" id="qr-input" placeholder="ضع الرابط أو النص هنا...">
-        <button class="action-btn" onclick="generateQR()">إنشاء كود QR ✨</button>
-        
-        <div id="qrcode"></div>
-        <button id="download-btn" class="action-btn" onclick="downloadQR()">تحميل الصورة ⬇️</button>
-    </div>
-
-    <div id="scan-section" class="content-section">
-        <div id="camera-prompt">
-            <p style="color: var(--text-muted); margin-bottom: 20px;">اضغط لبدء استخدام الكاميرا</p>
-            <button class="action-btn" onclick="initScanner()">فتح الكاميرا 📷</button>
+    <div id="scan-page" class="page-section active">
+        <div class="card">
+            <div id="reader"></div>
+            <div id="camera-prompt" style="text-align: center; padding: 20px;">
+                <button class="action-btn" onclick="initScanner()">ابدأ المسح الآن 📷</button>
+            </div>
+            <div id="scan-result-card" style="display:none; text-align:center; margin-top:15px;">
+                <p>الرابط المكتشف:</p>
+                <a id="result-link" href="#" target="_blank" style="color:var(--accent); word-break:break-all;"></a>
+                <button class="action-btn" style="background:#475569; margin-top:15px;" onclick="resetScanner()">مسح جديد 🔄</button>
+            </div>
         </div>
+    </div>
 
-        <div id="reader"></div>
+    <div id="create-page" class="page-section">
+        <div class="card">
+            <div class="control-group">
+                <label>الرابط أو النص</label>
+                <input type="text" id="qr-input" placeholder="https://...">
+            </div>
+            <div style="display: flex; gap:10px; margin-bottom:15px;">
+                <div style="flex:1"><label>العرض</label><input type="number" id="qr-width" value="500"></div>
+                <div style="flex:1"><label>الطول</label><input type="number" id="qr-height" value="500"></div>
+            </div>
+            <div class="control-group">
+                <label>نص أسفل الكود (اختياري)</label>
+                <input type="text" id="qr-text" placeholder="مثال: SCAN ME">
+            </div>
+            <button class="action-btn" onclick="generateNow()">إنشاء وتحميل ✨</button>
+            
+            <div id="result-area">
+                <canvas id="final-canvas"></canvas>
+                <button class="action-btn" style="background:var(--success); margin-top:10px;" onclick="downloadImage()">حفظ في الجهاز ⬇️</button>
+            </div>
+        </div>
+    </div>
 
-        <div id="scan-result-card">
-            <p style="margin:0; font-size: 0.9rem; color: var(--text-muted);">الرابط المكتشف (سيفتح في نافذة جديدة):</p>
-            <a id="result-link" href="#" target="_blank" rel="noopener noreferrer"></a>
-            <p style="font-size: 0.8rem; color: #64748b; margin-bottom: 15px;">انقر على الرابط أعلاه للانتقال</p>
-            <button class="action-btn" style="background: #475569; color: white;" onclick="resetScanner()">مسح كود آخر 🔄</button>
+    <div id="about-page" class="page-section">
+        <div class="card">
+            <h2 style="text-align:center; color:var(--accent)">من نحن</h2>
+            <p class="info-text">
+                نحن فريق متخصص في تطوير حلول الويب، قمنا ببناء هذا الـ Web App لتوفير تجربة سهلة وسريعة لاستخدام تقنية الـ QR Code سواء في الصناعة أو المسح بأعلى جودة ممكنة.
+            </p>
+        </div>
+    </div>
+
+    <div id="contact-page" class="page-section">
+        <div class="card" style="text-align: center;">
+            <h2 style="color:var(--accent)">تواصل معنا</h2>
+            <p class="info-text">لديك استفسار أو اقتراح؟ نحن هنا للمساعدة!</p>
+            <a href="https://t.me/Tawaslen" target="_blank" class="contact-link">
+                تواصل عبر تليجرام @Tawaslen
+            </a>
         </div>
     </div>
 </div>
 
+<nav class="bottom-nav">
+    <div class="nav-item active" onclick="showPage('scan', 'ماسح QR', this)">
+        <svg viewBox="0 0 24 24"><path d="M4,4H10V10H4V4M14,4H20V10H14V4M14,14H20V20H14V14M4,14H10V20H4V14M6,6V8H8V6H6M16,6V8H18V6H16M16,16V18H18V16H16M6,16V18H8V16H6M7,7V7H7V7H7M17,7V7H17V7H17M17,17V17H17V17H17M7,17V17H7V7H7Z"/></svg>
+        <span>Scan</span>
+    </div>
+    <div class="nav-item" onclick="showPage('create', 'إنشاء QR', this)">
+        <svg viewBox="0 0 24 24"><path d="M19,13H13V19H11V13H5V11H11V5H13V11H19V13Z"/></svg>
+        <span>Create</span>
+    </div>
+    <div class="nav-item" onclick="showPage('about', 'من نحن', this)">
+        <svg viewBox="0 0 24 24"><path d="M12,2C6.48,2,2,6.48,2,12s4.48,10,10,10s10-4.48,10-10S17.52,2,12,2z M13,17h-2v-6h2V17z M13,9h-2V7h2V9z"/></svg>
+        <span>About</span>
+    </div>
+    <div class="nav-item" onclick="showPage('contact', 'تواصل معنا', this)">
+        <svg viewBox="0 0 24 24"><path d="M20,4H4C2.9,4,2,4.9,2,6v12c0,1.1,0.9,2,2,2h16c1.1,0,2-0.9,2-2V6C22,4.9,21.1,4,20,4z M20,18H4V8l8,5l8-5V18z M12,11L4,6h16L12,11z"/></svg>
+        <span>Contact</span>
+    </div>
+</nav>
+
 <script>
-    function switchTab(type) {
-        document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
-        document.querySelectorAll('.content-section').forEach(s => s.classList.remove('active'));
+    // وظيفة التنقل بين الصفحات
+    function showPage(pageId, title, element) {
+        document.querySelectorAll('.page-section').forEach(p => p.classList.remove('active'));
+        document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
         
-        if(type === 'gen') {
-            document.querySelector('.tab-btn:nth-child(1)').classList.add('active');
-            document.getElementById('gen-section').classList.add('active');
-            stopScanner(); 
-        } else {
-            document.querySelector('.tab-btn:nth-child(2)').classList.add('active');
-            document.getElementById('scan-section').classList.add('active');
-        }
+        document.getElementById(pageId + '-page').classList.add('active');
+        document.getElementById('page-title').innerText = title;
+        element.classList.add('active');
+
+        if(pageId !== 'scan') stopScanner();
     }
 
-    // --- توليد QR ---
-    let qrcodeElement = new QRCode(document.getElementById("qrcode"), {
-        width: 200,
-        height: 200
-    });
+    // --- كود الإنشاء ---
+    async function generateNow() {
+        const text = document.getElementById('qr-input').value;
+        const extraText = document.getElementById('qr-text').value;
+        const w = parseInt(document.getElementById('qr-width').value) || 500;
+        const h = parseInt(document.getElementById('qr-height').value) || 500;
+        const canvas = document.getElementById('final-canvas');
 
-    function generateQR() {
-        let text = document.getElementById('qr-input').value;
-        if(text.trim()) {
-            qrcodeElement.makeCode(text);
-            document.getElementById('qrcode').style.display = 'block';
-            document.getElementById('download-btn').style.display = 'flex';
-        } else {
-            alert("اكتب نصاً أولاً!");
-        }
+        if (!text) return alert("برجاء إدخال نص");
+
+        try {
+            const tempCanvas = document.createElement('canvas');
+            const qrSize = Math.min(w, h);
+            await QRCode.toCanvas(tempCanvas, text, { width: qrSize, margin: 2, errorCorrectionLevel: 'H' });
+
+            const ctx = canvas.getContext('2d');
+            canvas.width = w;
+            canvas.height = extraText ? h + 80 : h;
+            ctx.fillStyle = "white";
+            ctx.fillRect(0, 0, canvas.width, canvas.height);
+            ctx.drawImage(tempCanvas, (w-qrSize)/2, (h-qrSize)/2);
+
+            if (extraText) {
+                ctx.fillStyle = "black";
+                ctx.font = "bold 30px Arial";
+                ctx.textAlign = "center";
+                ctx.fillText(extraText, w/2, h + 40);
+            }
+            document.getElementById('result-area').style.display = 'block';
+        } catch (err) { console.error(err); }
     }
 
-    function downloadQR() {
-        let img = document.querySelector('#qrcode img');
-        if(img) {
-            let link = document.createElement('a');
-            link.href = img.src;
-            link.download = 'QR_Code.png';
-            link.click();
-        }
+    function downloadImage() {
+        const link = document.createElement('a');
+        link.download = 'QR_Code.png';
+        link.href = document.getElementById('final-canvas').toDataURL();
+        link.click();
     }
 
-    // --- مسح QR ---
+    // --- كود الماسح ---
     let html5QrCode;
-
     function initScanner() {
         document.getElementById('camera-prompt').style.display = 'none';
         document.getElementById('reader').style.display = 'block';
-        if (!html5QrCode) { html5QrCode = new Html5Qrcode("reader"); }
-        startScanner();
-    }
-
-    function startScanner() {
-        html5QrCode.start(
-            { facingMode: "environment" }, 
-            { fps: 10, qrbox: { width: 250, height: 250 } },
-            (decodedText) => { showResult(decodedText); }
-        ).catch(err => {
-            alert("يرجى السماح بالوصول للكاميرا.");
-            resetScanner();
+        html5QrCode = new Html5Qrcode("reader");
+        html5QrCode.start({ facingMode: "environment" }, { fps: 10, qrbox: 250 }, (decodedText) => {
+            stopScanner();
+            document.getElementById('reader').style.display = 'none';
+            document.getElementById('scan-result-card').style.display = 'block';
+            document.getElementById('result-link').innerText = decodedText;
+            document.getElementById('result-link').href = decodedText.startsWith('http') ? decodedText : 'https://' + decodedText;
         });
     }
 
-    function showResult(text) {
-        stopScanner();
-        document.getElementById('reader').style.display = 'none';
-        document.getElementById('scan-result-card').style.display = 'block';
-        
-        let linkElement = document.getElementById('result-link');
-        linkElement.innerText = text;
-        
-        // إذا كان النص لا يبدأ بـ http، نقوم بإضافتها ليفتح كـ رابط صحيح
-        let webLink = text.startsWith('http') ? text : 'https://' + text;
-        linkElement.href = webLink;
-    }
-
-    function stopScanner() {
-        if (html5QrCode && html5QrCode.isScanning) {
-            html5QrCode.stop();
-        }
-    }
-
-    function resetScanner() {
-        stopScanner();
-        document.getElementById('scan-result-card').style.display = 'none';
-        document.getElementById('reader').style.display = 'none';
-        document.getElementById('camera-prompt').style.display = 'block';
+    function stopScanner() { if(html5QrCode && html5QrCode.isScanning) html5QrCode.stop(); }
+    function resetScanner() { 
+        stopScanner(); 
+        document.getElementById('scan-result-card').style.display = 'none'; 
+        document.getElementById('camera-prompt').style.display = 'block'; 
     }
 </script>
 
